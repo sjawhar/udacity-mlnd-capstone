@@ -34,7 +34,7 @@ For example, consider a model that gives a recall of 0.85 and a precision of 0.2
 
 Consider another model that gives a recall of 0.1 and a precision of 0.95. Only five percent of the samples predicted to be at risk are false positives. Though fewer of the total cancellations are caught, those that are marked as downgrades or cancellations can be trusted to be so. The score of this model would be 0.1, and so it would be preferred over the previous example.
 
-*See the [Improvement](#Improvement) section of the Conclusion for a potential performance metric based on lifetime customer value.*
+*See the [Improvement](#improvement) section of the Conclusion for a potential performance metric based on lifetime customer value.*
 
 # Analysis
 ## Data Exploration
@@ -209,9 +209,9 @@ After some initial training and testing, two more features were later added:
 </table>
 </div>
 
-By looking at the `count` field in the tables above, it is clear that two features (`KitPurchasePrice` and `KitDistributionChannel`) are missing values for 12,335 samples, or 26% of the dataset. This is due to aforementioned data integrity issues in the purchase records of older kits. It might seem that `DaysSinceLastRefill` is also missing values since the value of `count` is less than the total number of samples. However, this is because samples corresponding to first-time refills have no previous refill and so have no valid value for this field. This field will therefore need to be transformed in some way, which is discussed in [Data Preprocessing](#Data-Preprocessing) below.
+By looking at the `count` field in the tables above, it is clear that two features (`KitPurchasePrice` and `KitDistributionChannel`) are missing values for 12,335 samples, or 26% of the dataset. This is due to aforementioned data integrity issues in the purchase records of older kits. It might seem that `DaysSinceLastRefill` is also missing values since the value of `count` is less than the total number of samples. However, this is because samples corresponding to first-time refills have no previous refill and so have no valid value for this field. This field will therefore need to be transformed in some way, which is discussed in [Data Preprocessing](#data-preprocessing) below.
 
-For details of the features' distributions, please refer to the [Exploratory Visualization](#Exploratory-Visualization) section below.
+For details of the features' distributions, please refer to the [Exploratory Visualization](#exploratory-visualization) section below.
 
 ```python
 # Investigate problem severity
@@ -261,29 +261,29 @@ As was mentioned above, the classes are heavily unbalanced, with over 97.7% of t
 
 ## Exploratory Visualization
 
-![png](images/output_8_0.png)
+![png](images/output_8_0.png?raw=true)
 
-![png](images/output_8_1.png)
+![png](images/output_8_1.png?raw=true)
 
-![png](images/output_8_2.png)
+![png](images/output_8_2.png?raw=true)
 
-![png](images/output_8_3.png)
+![png](images/output_8_3.png?raw=true)
 
-![png](images/output_8_4.png)
+![png](images/output_8_4.png?raw=true)
 
-![png](images/output_8_5.png)
+![png](images/output_8_5.png?raw=true)
 
-![png](images/output_8_6.png)
+![png](images/output_8_6.png?raw=true)
 
-![png](images/output_8_7.png)
+![png](images/output_8_7.png?raw=true)
 
-![png](images/output_8_8.png)
+![png](images/output_8_8.png?raw=true)
 
-![png](images/output_8_9.png)
+![png](images/output_8_9.png?raw=true)
 
-![png](images/output_8_10.png)
+![png](images/output_8_10.png?raw=true)
 
-![png](images/output_8_11.png)
+![png](images/output_8_11.png?raw=true)
 
 `RefillNumber` is fairly evenly distributed at the lower end, with between 6% and 8% of the samples belonging to each `RefillNumber` value up to 12, after which it drops off sharply. `PreviousRefillsAmount` shares a similar distribution, dropping off after around $2,500, which indicates a fairly consistent refill price. This is confirmed by examining the distribution of `RefillAmount`, which is heavily concentrated around $100, $300, and $550. Also very consistent is the number of items contained in the refill, with nearly all of the samples having a `RefillItems` value between 2 and 6.
 
@@ -768,11 +768,11 @@ A predictor is useful, but far more useful is intuitive understanding of the pro
 </table>
 </div>
 
-![png](images/output_30_0.png)
+![png](images/output_30_0.png?raw=true)
 
-![png](images/output_30_1.png)
+![png](images/output_30_1.png?raw=true)
 
-![png](images/output_30_2.png)
+![png](images/output_30_2.png?raw=true)
 
 It seems that the predictor has uncovered a pattern of high cancellation among low-priced kits that have been active for a long time. After some consideration, this makes sense. Even highly-satisfied customers will eventually cancel, for example due to a change in circumstance such as retiring. Such customers might neglect to cancel their subscription. Then, after receiving a refill they might not have been expecting, they would have to go through the process of returning the items and cancelling the subscription, all of which involves lost time and money. This predictor would be able to identify such customers and prevent that waste with some effort beforehand.
 
