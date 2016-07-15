@@ -1,12 +1,3 @@
-This project requires the following libraries for visualizations:
-* graphviz
-* pydot
-
-A docker container has been prepared with the needed libraries:
-```bash
-docker run -dt -p 8888:8888 -v $WORKDIR:/home/jovyan/work sjawhar/udacity_p5
-```
-
 # Definition
 ## Project Overview and Problem Statement
 For a subscription-based business, reducing customer churn is critical to maintaining high growth. This project will examine a nearly six month slice of subscription transactions from such a business in an attempt to identify patterns leading to cancellation. The goal is to train a classifier capable of identifying customers at risk of cancellation using details of upcoming subscription transactions.
