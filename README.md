@@ -14,9 +14,9 @@ The search for a reasonable predictor will follow this general outline:
 * Algorithm parameter tuning
 * Validation testing
 
-The target column, `ServiceLevelChange`, can be one of `No change`, `Downgraded`, or `Deactivated` and represents the service level change of the kit in the 45 days following the refill. As such, this is a multiclass classification problem. Moreover, as will be explored below, the classes are heavily unbalanced with nearly 98% of the samples belonging to the `No change` class. The choice of performance metric will therefore be critical, as many common metrics perform poorly with unbalanced classes. Finally, due to data integrity issues, purchase information is not available for many kits and will need to be imputed.
+The target column, `ServiceLevelChange`, can be one of `No change`, `Downgraded`, or `Deactivated` and represents the service level change of the box in the 45 days following the refill. As such, this is a multiclass classification problem. Moreover, as will be explored below, the classes are heavily unbalanced with nearly 98% of the samples belonging to the `No change` class. The choice of performance metric will therefore be critical, as many common metrics perform poorly with unbalanced classes. Finally, due to data integrity issues, purchase information is not available for many boxes and will need to be imputed.
 
-**A note on vocabulary:** A customer of this business purchases a **kit** containing several different products. Each of these products are then **refilled** before expiration as part of the subscription service. Samples with a label of `Downgraded` or `Deactivated` will often be referred to below as **at risk**, as predictions of these labels indicate the customer is at risk of cancelling.
+**A note on vocabulary:** A customer of this business purchases a **box** containing several different products. Each of these products are then **refilled** before expiration as part of the subscription service. Samples with a label of `Downgraded` or `Deactivated` will often be referred to below as **at risk**, as predictions of these labels indicate the customer is at risk of cancelling.
 
 ## Metrics
 Considering that this predictor will be used in an intervention system, it's important to maintain a high precision and minimize false positives. Otherwise, time and money will be spent "intervening" with customers who have no intention of cancelling. Of course, the predictor should catch as many potential cancellations as possible, but the algorithm's performance in this respect can be improved iteratively as customer behavior is better understood. A custom scorer will therefore be used that is the recall score if precision is at least 0.9. Otherwise, the score will be zero.
@@ -29,18 +29,18 @@ Consider another model that gives a recall of 0.1 and a precision of 0.95. Only 
 
 # Analysis
 ## Data Exploration
-Data for this project was prepared through a deep-dive of the company's database. After identifying several restrcitions - chief among these being lack of audits on the statuses of kits and data integrity issues for older kits - the following features for each refill were identified, organized into views, and extracted:
+Data for this project was prepared through a deep-dive of the company's database. After identifying several restrcitions - chief among these being lack of audits on the statuses of boxes and data integrity issues for older boxes - the following features for each refill were identified, organized into views, and extracted:
 
-1. `RefillNumber`: The ordinality of this transaction in the refill history. For example, `RefillNumber=1` corresponds to a kit's first refill, and the fifth refill will have a `RefillNumber` of 5.
+1. `RefillNumber`: The ordinality of this transaction in the refill history. For example, `RefillNumber=1` corresponds to a box's first refill, and the fifth refill will have a `RefillNumber` of 5.
 * `RefillAmount`: The cost of this refill.
 * `AdvancedNotified`: Customers with up-to-date contact information are sent an email 2-4 weeks before their refill is scheduled for delivery. This field indicates which refills were preceded by such a notification.
-* `KitType`: A kit's type determines the mix of products contained within it.
-* `KitPurchasePrice`: The purchase price of the kit.
-* `KitDistributionChannel`: The distribution channel through which the customer purchased the kit. One of `DIRECT`, `DEALER`, or `WEB`.
+* `BoxType`: A box's type determines the mix of products contained within it.
+* `BoxPurchasePrice`: The purchase price of the box.
+* `BoxDistributionChannel`: The distribution channel through which the customer purchased the box. One of `DIRECT`, `DEALER`, or `WEB`.
 * `CustomerIsCorporate`: Some customers are associate with each other through a larger organization known as a corporation.
-* `PreviousRefillsAmount`: The sum of the cost of all previous refills for this kit.
+* `PreviousRefillsAmount`: The sum of the cost of all previous refills for this box.
 * `DaysSinceLastRefill`: The number of days since the last refill.
-* `DaysSinceKitPurchase`: The number of days since the kit was purchased.
+* `DaysSinceBoxPurchase`: The number of days since the box was purchased.
 
 After some initial training and testing, two more features were later added:
 
@@ -55,10 +55,10 @@ After some initial training and testing, two more features were later added:
       <th>RefillNumber</th>
       <th>RefillAmount</th>
       <th>RefillItems</th>
-      <th>KitPurchasePrice</th>
+      <th>BoxPurchasePrice</th>
       <th>PreviousRefillsAmount</th>
       <th>DaysSinceLastRefill</th>
-      <th>DaysSinceKitPurchase</th>
+      <th>DaysSinceBoxPurchase</th>
     </tr>
   </thead>
   <tbody>
@@ -152,8 +152,8 @@ After some initial training and testing, two more features were later added:
     <tr style="text-align: right;">
       <th></th>
       <th>AdvancedNotified</th>
-      <th>KitType</th>
-      <th>KitDistributionChannel</th>
+      <th>BoxType</th>
+      <th>BoxDistributionChannel</th>
       <th>CustomerIsCorporate</th>
       <th>CustomerState</th>
       <th>ServiceLevelChange</th>
@@ -200,7 +200,7 @@ After some initial training and testing, two more features were later added:
 </table>
 </div>
 
-By looking at the `count` field in the tables above, it is clear that two features (`KitPurchasePrice` and `KitDistributionChannel`) are missing values for 12,335 samples, or 26% of the dataset. This is due to aforementioned data integrity issues in the purchase records of older kits. It might seem that `DaysSinceLastRefill` is also missing values since the value of `count` is less than the total number of samples. However, this is because samples corresponding to first-time refills have no previous refill and so have no valid value for this field. This field will therefore need to be transformed in some way, which is discussed in [Data Preprocessing](#data-preprocessing) below.
+By looking at the `count` field in the tables above, it is clear that two features (`BoxPurchasePrice` and `BoxDistributionChannel`) are missing values for 12,335 samples, or 26% of the dataset. This is due to aforementioned data integrity issues in the purchase records of older boxes. It might seem that `DaysSinceLastRefill` is also missing values since the value of `count` is less than the total number of samples. However, this is because samples corresponding to first-time refills have no previous refill and so have no valid value for this field. This field will therefore need to be transformed in some way, which is discussed in [Data Preprocessing](#data-preprocessing) below.
 
 For details of the features' distributions, please refer to the [Exploratory Visualization](#exploratory-visualization) section below.
 
@@ -278,15 +278,15 @@ As was mentioned above, the classes are heavily unbalanced, with over 97.7% of t
 
 `RefillNumber` is fairly evenly distributed at the lower end, with between 6% and 8% of the samples belonging to each `RefillNumber` value up to 12, after which it drops off sharply. `PreviousRefillsAmount` shares a similar distribution, dropping off after around $2,500, which indicates a fairly consistent refill price. This is confirmed by examining the distribution of `RefillAmount`, which is heavily concentrated around $100, $300, and $550. Also very consistent is the number of items contained in the refill, with nearly all of the samples having a `RefillItems` value between 2 and 6.
 
-The distributions of `RefillNumber`, `PreviousRefillsAmount`, and `DaysSinceKitPurchase` seem to indicate that there are two distinct kit groups. Most of the samples belong to kits sold in the past few years. However, there is also a smaller group of long-standing installs. The behavior of these two groups might differ significantly.
+The distributions of `RefillNumber`, `PreviousRefillsAmount`, and `DaysSinceBoxPurchase` seem to indicate that there are two distinct box groups. Most of the samples belong to boxes sold in the past few years. However, there is also a smaller group of long-standing installs. The behavior of these two groups might differ significantly.
 
 Other notes:
 
 * `DaysSinceLastRefill` seems almost normally distributed around 60 days, though it is definitely skewed to the right.
-* In contrast, `DaysSinceKitPurchase` is heavily concentrated around 1,500 days.
+* In contrast, `DaysSinceBoxPurchase` is heavily concentrated around 1,500 days.
 * Around half of the refills were preceded by a notification.
-* Around 60% of the refills belong to kits that were sold directly to the customer.
-* Almost half of the samples belong to `KitType` J, and nearly all of the samples belong to `KitType` G, J, K, or P.
+* Around 60% of the refills belong to boxes that were sold directly to the customer.
+* Almost half of the samples belong to `BoxType` J, and nearly all of the samples belong to `BoxType` G, J, K, or P.
 * Over one-fifth of the samples belong to customers in California, with Texas coming in second place at around one-tenth. The other states are relatively evenly distributed.
 
 ## Algorithms and Techniques
@@ -308,7 +308,7 @@ A decision tree classifier immediately stood out to me as a worthy candidate for
 Stochastic gradient descent (SGD) is not a model itself but rather a method of training models such as support vector machines (SVMs) and logistic regression models. Specifically, SGD is a method of finding the minima/maxima of a function by iteratively sweeping over randomly sampled subsets of the training set. It's often used for training neural nets, but those models will not be used in this project due to technical and experiential limitations. Instead, the loss functions made available by sklearn (linear SVMs, logistic regression, perceptron, and others) will be tested. The big benefit of SGD for this project is that it allows for online learning, meaning new results can more easily be incorporated into the model without having to retrain on the entire dataset.
 
 ## Benchmark
-The business's assumption up to this point was that customers have not been properly educated of the refill process and were cancelling after receiving their first refill. Another assumption was that a few, high-priced items were responsible for a large proportion of the cancellations. These two assumptions together will define our benchmark, which will be as follows: if a refill is the kit's first, assume deactivation. If the average item price in the refill is more than $200, assume deactivation. Otherwise, assume no change. For simplicity, the benchmark will be established as a binary classifier.
+The business's assumption up to this point was that customers have not been properly educated of the refill process and were cancelling after receiving their first refill. Another assumption was that a few, high-priced items were responsible for a large proportion of the cancellations. These two assumptions together will define our benchmark, which will be as follows: if a refill is the box's first, assume deactivation. If the average item price in the refill is more than $200, assume deactivation. Otherwise, assume no change. For simplicity, the benchmark will be established as a binary classifier.
 
 # Methodology
 ## Data Preprocessing
@@ -318,7 +318,7 @@ The following tasks need to be performed:
   * To increase the predictor's accuracy, samples will be grouped by class before imputing.
   * First refills have a `NaN` value for `DaysSinceLastRefill`, which would be replaced with the mean during imputation. It would be more appropriate to transform the feature to its reciprocal and give first refills a value of zero.
 * One-hot encode categorical features
-  * One-hot encoding converts a single categorical feature into multiple binary features, where each binary feature represents a possible value of the original categorical feature. For example, `KitDistributionChannel` has three values: Direct, Dealer, and Web. This feature will be converted to three features: `KitDistributionChannel_Direct`, `KitDistributionChannel_Dealer`, `KitDistributionChannel_Web`. If the original value of `KitDistributionChannel` was Direct, then that corresponding binary feature would have a value of 1 and the others 0.
+  * One-hot encoding converts a single categorical feature into multiple binary features, where each binary feature represents a possible value of the original categorical feature. For example, `BoxDistributionChannel` has three values: Direct, Dealer, and Web. This feature will be converted to three features: `BoxDistributionChannel_Direct`, `BoxDistributionChannel_Dealer`, `BoxDistributionChannel_Web`. If the original value of `BoxDistributionChannel` was Direct, then that corresponding binary feature would have a value of 1 and the others 0.
   * This is necessary as not all algorithms work well (or at all) with categorical features. One-hot encoding allows these categorical features to be represented simply as vectors (e.g. [1,0,0] above), which is much easier to work with.
 
 ## Implementation
@@ -361,12 +361,12 @@ display(X_all.head())
       <th>RefillAmount</th>
       <th>RefillItems</th>
       <th>AdvancedNotified</th>
-      <th>KitType_A</th>
-      <th>KitType_B</th>
-      <th>KitType_C</th>
-      <th>KitType_D</th>
-      <th>KitType_E</th>
-      <th>KitType_F</th>
+      <th>BoxType_A</th>
+      <th>BoxType_B</th>
+      <th>BoxType_C</th>
+      <th>BoxType_D</th>
+      <th>BoxType_E</th>
+      <th>BoxType_F</th>
       <th>...</th>
       <th>CustomerState_VA</th>
       <th>CustomerState_VI</th>
@@ -377,7 +377,7 @@ display(X_all.head())
       <th>CustomerState_WY</th>
       <th>PreviousRefillsAmount</th>
       <th>RefillFrequency</th>
-      <th>DaysSinceKitPurchase</th>
+      <th>DaysSinceBoxPurchase</th>
     </tr>
   </thead>
   <tbody>
@@ -716,11 +716,11 @@ A predictor is useful, but far more useful is intuitive understanding of the pro
   </thead>
   <tbody>
     <tr>
-      <th>DaysSinceKitPurchase</th>
+      <th>DaysSinceBoxPurchase</th>
       <td>0.229165</td>
     </tr>
     <tr>
-      <th>KitPurchasePrice</th>
+      <th>BoxPurchasePrice</th>
       <td>0.201741</td>
     </tr>
     <tr>
@@ -759,13 +759,15 @@ A predictor is useful, but far more useful is intuitive understanding of the pro
 </table>
 </div>
 
+![png](images/output_29_0.png?raw=true)
+
 ![png](images/output_30_0.png?raw=true)
 
 ![png](images/output_30_1.png?raw=true)
 
 ![png](images/output_30_2.png?raw=true)
 
-It seems that the predictor has uncovered a pattern of high cancellation among low-priced kits that have been active for a long time. After some consideration, this makes sense. Even highly-satisfied customers will eventually cancel, for example due to a change in circumstance such as retiring. Such customers might neglect to cancel their subscription. Then, after receiving a refill they might not have been expecting, they would have to go through the process of returning the items and cancelling the subscription, all of which involves lost time and money. This predictor would be able to identify such customers and prevent that waste with some effort beforehand.
+It seems that the predictor has uncovered a pattern of high cancellation among low-priced boxes that have been active for a long time. After some consideration, this makes sense. Even highly-satisfied customers will eventually cancel, for example due to a change in circumstance such as retiring. Such customers might neglect to cancel their subscription. Then, after receiving a refill they might not have been expecting, they would have to go through the process of returning the items and cancelling the subscription, all of which involves lost time and money. This predictor would be able to identify such customers and prevent that waste with some effort beforehand.
 
 ## Reflection
 To recap, the process undertaken in this project:
@@ -778,15 +780,15 @@ To recap, the process undertaken in this project:
 * Algorithm parameter tuning: train/test splitting the data, then performance parameter grid searches with cross-validation to identify the highest-performing model of the candidates
 * Validation testing: testing the performance of the chosen model against a validation data set
 
-Far and away, the main challenge in this project was in preparing the data. Many new views were prepared involving several tables. For example, the necessary table relationships to uncover purchase information for kits had to be discovered, and these were still not enough to overcome data integrity issues for older kits. These data integrity issues continued to complicate the project beyond the data preparation phase. Missing values for certain features needed to be imputed in the preprocessing phase. On the other hand, there is an abundance of available data. Modeling such an unbalanced problem would be highly innacurate were there not tens of thousands of available samples. Moreover, I have already begun the process of improving data storage protocols, including ensuring that certain historical data is stored to make reporting easier (or, in some cases, simply possible) in the future. This will enable further iterative improvement of the predictor.
+Far and away, the main challenge in this project was in preparing the data. Many new views were prepared involving several tables. For example, the necessary table relationships to uncover purchase information for boxes had to be discovered, and these were still not enough to overcome data integrity issues for older boxes. These data integrity issues continued to complicate the project beyond the data preparation phase. Missing values for certain features needed to be imputed in the preprocessing phase. On the other hand, there is an abundance of available data. Modeling such an unbalanced problem would be highly innacurate were there not tens of thousands of available samples. Moreover, I have already begun the process of improving data storage protocols, including ensuring that certain historical data is stored to make reporting easier (or, in some cases, simply possible) in the future. This will enable further iterative improvement of the predictor.
 
 Two issues mentioned above impacted the project in both positive and negative ways: the large amount of data and the unbalanced classes. A large dataset is a luxury, but it also led to comparatively long training times. Performing a parameter grid search took upwards of a few hours for the more complicated algorithms, even on a powerful dedicated machine. The unbalanced classes made choosing a performance metric a novel and engaging challenge. However, I suspect they also raise the standard on the input data for producing a high-quality model.
 
 At this point, though, I am quite pleased with the result of this project. For several reasons, not least among them being my own novicehood, I was not expecting the final model to have as high a precision as it does. To be sure, I would prefer that the precision had also exceeded my expectation. All that said, I feel quite comfortable testing this model in a production-like environment.
 
 ## Improvement
-As I've mentioned above, I believe that adding additional relevant features will improve the recall. In particular, the business believes that certain key, high-priced items are possibly triggering cancellations. I've considered adding a boolean "is_included" feature for each of those items. Also, the data has a focus on kits rather than customers. For example, if a customer were to cancel a kit and purchase a new one, this is not explicitly reflected in the data at the moment. Further, features like customer lifetime and balance due at the time of refill might expose critical patterns in behavior.
+As I've mentioned above, I believe that adding additional relevant features will improve the recall. In particular, the business believes that certain key, high-priced items are possibly triggering cancellations. I've considered adding a boolean "is_included" feature for each of those items. Also, the data has a focus on boxes rather than customers. For example, if a customer were to cancel a box and purchase a new one, this is not explicitly reflected in the data at the moment. Further, features like customer lifetime and balance due at the time of refill might expose critical patterns in behavior.
 
-Exploring the customer angle further, I've also had the idea to perform a customer segmentation analysis. Such an analysis could provide valuable insight into customer behavior in addition to providing a few relevant features for training the predictor. The first of these would obviously be the segment number of the customer to which the kit belongs. Clustering would also allow me to establish an average customer lifetime value (CLV) for each segment. A cost function for the predictor could then be defined using this CLV in the following way: if the predictor fails to catch a cancellation, it will incur a penalty of the deficit between that customer's current lifetime value and the average CLV for that customer's segment. In this way, the process of fitting the model to the data will be directly optimizing the potential value that could be recovered by using the predictor.
+Exploring the customer angle further, I've also had the idea to perform a customer segmentation analysis. Such an analysis could provide valuable insight into customer behavior in addition to providing a few relevant features for training the predictor. The first of these would obviously be the segment number of the customer to which the box belongs. Clustering would also allow me to establish an average customer lifetime value (CLV) for each segment. A cost function for the predictor could then be defined using this CLV in the following way: if the predictor fails to catch a cancellation, it will incur a penalty of the deficit between that customer's current lifetime value and the average CLV for that customer's segment. In this way, the process of fitting the model to the data will be directly optimizing the potential value that could be recovered by using the predictor.
 
 Finally, I will admit to being disappointed that the `SGDClassifier` algorithm did not perform very well. An online learner would be a big bonus for iteratively improving the predictor. One such learner I left out of this project, mostly due to lacking the requisite experience, is a neural net. Though it carries with it the disadvantage of being black boxes, it is an online learner with a strong reputation in the industry today.
